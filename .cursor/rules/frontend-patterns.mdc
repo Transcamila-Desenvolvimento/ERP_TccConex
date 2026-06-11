@@ -1,0 +1,156 @@
+---
+
+description: Padrões obrigatórios para componentes e chamadas de API no frontend
+
+globs: frontend/src/**/*.{ts,tsx}
+
+alwaysApply: false
+
+---
+
+
+
+# Padrões Frontend — TccConex ERP
+
+
+
+## Checklist de conformidade (sempre verificar)
+
+
+
+Antes de concluir qualquer alteração no frontend, confirmar:
+
+
+
+- [ ] Chamadas remotas via `apiService` + hook em `src/hooks/` (`useQuery`/`useMutation`)
+
+- [ ] Nenhum `fetch()` direto em componentes
+
+- [ ] Domínios de negócio usam API Django (não mock local)
+
+- [ ] Apenas JWT no `localStorage` (nunca objeto user completo)
+
+- [ ] Workspaces com lazy loading em `AppRoutes.tsx`
+
+- [ ] Listagens paginadas consomem `{ results, count }` da API (não paginar no cliente dados remotos)
+
+- [ ] Contexto de sessão enviado via headers (`X-Prothon-Environment`, `X-Prothon-Filial`) — automático no interceptor do `apiService`
+
+
+
+## Contexto de ambiente/filial
+
+O `apiService` envia automaticamente os headers de sessão (gravados na seleção de ambiente):
+
+- `X-Prothon-Environment` — ex.: `Financeiro`, `Indicadores`
+- `X-Prothon-Filial` — omitido em ambientes globais (`Administração`, `Financeiro`)
+
+Ambientes globais não exigem filial na tela de seleção (`SelectionPage`).
+
+
+
+Toda chamada à API Django deve usar `useQuery` ou `useMutation`. Nunca use `useEffect` + `useState` para buscar dados remotos.
+
+
+
+```tsx
+
+// ❌ ERRADO
+
+useEffect(() => {
+
+  apiService.getUsers().then(setUsers);
+
+}, []);
+
+
+
+// ✅ CORRETO — criar hook em src/hooks/useUsers.ts
+
+export function useUsers() {
+
+  return useQuery({ queryKey: ['users'], queryFn: apiService.getUsers });
+
+}
+
+
+
+// ✅ CORRETO — mutação
+
+export function useCreateUser() {
+
+  const qc = useQueryClient();
+
+  return useMutation({
+
+    mutationFn: apiService.createUser,
+
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+
+  });
+
+}
+
+```
+
+
+
+## Relatórios financeiros paginados
+
+
+
+```tsx
+
+// ✅ CORRETO — page/filtros na queryKey, dados da página atual em results
+
+const params = { page: currentPage, pageSize: 10, search, filial, party, tipo };
+
+const { data } = usePagarReport(params, activeTab === 'pagar');
+
+const rows = data?.results ?? [];
+
+const total = data?.count ?? 0;
+
+```
+
+
+
+Facets para selects de filtro: `useReportFacets('pagar' | 'receber' | 'aging')`.
+
+
+
+## Workspaces e rotas
+
+
+
+- Todo workspace em `src/workspaces/` deve ter lazy loading em `AppRoutes.tsx`
+
+- Hooks de dados em `src/hooks/` (um arquivo por recurso)
+
+- Nunca colocar lógica de busca diretamente no componente
+
+
+
+## Gráficos
+
+
+
+Use sempre `react-chartjs-2`. Registre apenas os componentes necessários:
+
+
+
+```tsx
+
+import { Chart as ChartJS, LineElement, ... } from 'chart.js';
+
+ChartJS.register(LineElement, ...);
+
+```
+
+
+
+## Tipos
+
+Tipos de domínio ficam em `src/types/domain.ts`. Importe sempre desse arquivo — nunca duplique interfaces nos workspaces.
+
+
