@@ -1,4 +1,5 @@
 import React from 'react';
+import { ADMIN_ENVIRONMENT } from '../../constants/environments';
 import { useAuth } from '../../contexts/AuthContext';
 import { useUsers } from '../../hooks/useUsers';
 
@@ -6,8 +7,8 @@ const DashboardWorkspace: React.FC = () => {
   const { user, selectedEnvironment, selectedFilial } = useAuth();
   const { data: usersList = [] } = useUsers();
 
-  const totalUsers = selectedEnvironment === 'Administração' ? usersList.length : 0;
-  const activeUsers = selectedEnvironment === 'Administração'
+  const totalUsers = selectedEnvironment === ADMIN_ENVIRONMENT ? usersList.length : 0;
+  const activeUsers = selectedEnvironment === ADMIN_ENVIRONMENT
     ? usersList.filter(u => u.status === 'ativo').length
     : 0;
 
@@ -22,7 +23,7 @@ const DashboardWorkspace: React.FC = () => {
       </div>
 
       <div className="dashboard-stats-grid">
-        {selectedEnvironment === 'Administração' ? (
+        {selectedEnvironment === ADMIN_ENVIRONMENT ? (
           <>
             <div className="stat-card">
               <div className="stat-card-label" id="dash-card-1-label">Quantidade de Usuários</div>

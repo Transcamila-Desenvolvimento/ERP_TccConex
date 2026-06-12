@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { ADMIN_ENVIRONMENT } from '../constants/environments';
 import logoExpanded from '../assets/Logo_TccConex.png';
 import logoCollapsed from '../assets/Logo_TccConex_Fechado.png';
 
@@ -12,6 +13,7 @@ const DashboardLayout: React.FC = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isCashflowSubmenuOpen, setIsCashflowSubmenuOpen] = useState(false);
+  const [isIntegrationsSubmenuOpen, setIsIntegrationsSubmenuOpen] = useState(false);
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [paletteQuery, setPaletteQuery] = useState('');
 
@@ -76,7 +78,18 @@ const DashboardLayout: React.FC = () => {
           </svg>
         ),
         action: () => navigate('/admin'),
-        show: user?.environments?.includes('Administração')
+        show: user?.environments?.includes(ADMIN_ENVIRONMENT)
+      },
+      {
+        title: "ETL Server",
+        path: "Integrações / ETL Server",
+        icon: (
+          <svg className="search-item-icon" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+          </svg>
+        ),
+        action: () => navigate('/admin/integrations/etl-server'),
+        show: user?.environments?.includes(ADMIN_ENVIRONMENT)
       },
       {
         title: "Home Financeiro",
@@ -204,7 +217,9 @@ const DashboardLayout: React.FC = () => {
     const path = location.pathname;
 
     if (path === '/') return `${env} / Painel Geral`;
-    if (path.startsWith('/admin')) return `Administração / Controle Geral`;
+    if (path === '/admin/integrations/etl-server') return `${ADMIN_ENVIRONMENT} / Integrações / ETL Server`;
+    if (path === '/admin' || path === '/admin/') return `${ADMIN_ENVIRONMENT} / Controle Geral`;
+    if (path.startsWith('/admin')) return `${ADMIN_ENVIRONMENT} / Controle Geral`;
     if (path.startsWith('/relatorios')) return `${env} / Inclusão de Relatórios`;
     if (path.startsWith('/financeiro/home')) return `${env} / Dashboard Financeiro`;
     if (path.startsWith('/financeiro/calendar')) return `${env} / Calendário de Vencimentos`;
@@ -216,6 +231,14 @@ const DashboardLayout: React.FC = () => {
     
     return `${env} / Principal`;
   };
+
+  const isAdminUsersActive = location.pathname === '/admin' || location.pathname === '/admin/';
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/admin/integrations')) {
+      setIsIntegrationsSubmenuOpen(true);
+    }
+  }, [location.pathname]);
 
   return (
     <div className="app-container" id="app-container" style={{ display: 'flex' }}>
@@ -244,19 +267,61 @@ const DashboardLayout: React.FC = () => {
           )}
 
           {/* Admin Workspace */}
-          {selectedEnvironment === 'Administração' && (
-            <Link 
-              to="/admin" 
-              className={`nav-btn ${isRouteActive('/admin') ? 'active' : ''}`} 
-              data-tooltip="Administração"
-            >
-              <div className="nav-btn-left">
-                <svg className="nav-icon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                </svg>
-                <span className="nav-text">Administração</span>
+          {selectedEnvironment === ADMIN_ENVIRONMENT && (
+            <div id="sidebar-admin-group" style={{ width: '100%' }}>
+              <Link 
+                to="/admin" 
+                className={`nav-btn ${isAdminUsersActive ? 'active' : ''}`} 
+                data-tooltip="Administração"
+              >
+                <div className="nav-btn-left">
+                  <svg className="nav-icon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  </svg>
+                  <span className="nav-text">Administração</span>
+                </div>
+              </Link>
+
+              <div className="nav-group-wrapper" id="btn-menu-admin-integrations">
+                <button 
+                  type="button" 
+                  className={`nav-btn ${isRouteActive('/admin/integrations/etl-server') ? 'active-parent' : ''}`}
+                  onClick={() => setIsIntegrationsSubmenuOpen(!isIntegrationsSubmenuOpen)}
+                >
+                  <div className="nav-btn-left">
+                    <svg className="nav-icon" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                    </svg>
+                    <span className="nav-text">Integrações</span>
+                  </div>
+                  <svg className="chevron-submenu" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ transform: isIntegrationsSubmenuOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </button>
+
+                <div 
+                  className="submenu-container" 
+                  style={{ 
+                    display: isSidebarCollapsed ? undefined : 'block',
+                    maxHeight: isSidebarCollapsed ? undefined : (isIntegrationsSubmenuOpen ? '120px' : '0px'), 
+                    overflow: 'hidden', 
+                    transition: 'max-height 0.25s ease' 
+                  }}
+                >
+                  <Link 
+                    to="/admin/integrations/etl-server" 
+                    className={`nav-btn sub-nav-btn ${isRouteActive('/admin/integrations/etl-server') ? 'active' : ''}`}
+                  >
+                    <div className="nav-btn-left">
+                      <svg className="nav-icon" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                      </svg>
+                      <span className="nav-text">ETL Server</span>
+                    </div>
+                  </Link>
+                </div>
               </div>
-            </Link>
+            </div>
           )}
 
           {/* Indicadores Workspace */}

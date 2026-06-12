@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from .constants import sanitize_environments, sanitize_filiais, sanitize_permissions
+from .constants import ADMIN_ENVIRONMENT, sanitize_environments, sanitize_filiais, sanitize_permissions
 from .models import Role
 
 User = get_user_model()
@@ -18,7 +18,7 @@ class RoleSerializer(serializers.ModelSerializer):
         return data
 
 ALL_BRANCHES = ['Ibiporã (Matriz)', 'Rondonópolis', 'Paranaguá']
-ADMIN_ENVS = ['Administração', 'Financeiro', 'Indicadores']
+ADMIN_ENVS = [ADMIN_ENVIRONMENT, 'Financeiro', 'Indicadores']
 ADMIN_FILIAIS = {env: list(ALL_BRANCHES) for env in ['Financeiro', 'Indicadores']}
 
 

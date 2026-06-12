@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework.test import APIClient
 
+from apps.accounts.constants import ADMIN_ENVIRONMENT
 from apps.accounts.views import generate_jwt_token
 
 User = get_user_model()
@@ -25,7 +26,7 @@ class AuthAPITests(TestCase):
             password='admin123',
             role_id='1',
             name='Admin Test',
-            environments=['Administração', 'Financeiro', 'Indicadores'],
+            environments=[ADMIN_ENVIRONMENT, 'Financeiro', 'Indicadores'],
             filiais={
                 'Financeiro': ['Ibiporã (Matriz)'],
                 'Indicadores': ['Ibiporã (Matriz)'],
@@ -66,11 +67,11 @@ class AuthAPITests(TestCase):
         self.assertEqual(response.data['username'], 'admin_test')
 
     def test_non_admin_cannot_manage_users(self):
-        response = self.client.get('/api/auth/users/', **auth_headers(self.operator, 'Administração'))
+        response = self.client.get('/api/auth/users/', **auth_headers(self.operator, ADMIN_ENVIRONMENT))
         self.assertEqual(response.status_code, 403)
 
     def test_admin_can_list_users(self):
-        response = self.client.get('/api/auth/users/', **auth_headers(self.admin, 'Administração'))
+        response = self.client.get('/api/auth/users/', **auth_headers(self.admin, ADMIN_ENVIRONMENT))
         self.assertEqual(response.status_code, 200)
 
 

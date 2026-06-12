@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { ADMIN_ENVIRONMENT } from '../../constants/environments';
 import { useAuth } from '../../contexts/AuthContext';
 import type { User, Role } from '../../types/domain';
 import { useAuditLogs } from '../../hooks/useAuditLogs';
@@ -21,7 +22,7 @@ const MODULE_PERMISSIONS = [
 ] as const;
 
 const isAdminRole = (role: Role | undefined, roleId: string) =>
-  role?.permissions.includes('Administração') ?? roleId === '1';
+  role?.permissions.includes(ADMIN_ENVIRONMENT) ?? roleId === '1';
 
 const AdminWorkspace: React.FC = () => {
   const { user: currentUser } = useAuth();
@@ -35,7 +36,7 @@ const AdminWorkspace: React.FC = () => {
   const toggleUserStatus = useToggleUserStatus();
 
   const defaultRoleId = useMemo(
-    () => roles.find((r) => !r.permissions.includes('Administração'))?.id ?? roles[0]?.id ?? '2',
+    () => roles.find((r) => !r.permissions.includes(ADMIN_ENVIRONMENT))?.id ?? roles[0]?.id ?? '2',
     [roles],
   );
 
@@ -45,6 +46,7 @@ const AdminWorkspace: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('todos');
   const [statusFilter, setStatusFilter] = useState('todos');
+  const [activeTab, setActiveTab] = useState<'users' | 'audit'>('users');
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -157,7 +159,7 @@ const AdminWorkspace: React.FC = () => {
 
     if (isSelectedAdmin) {
       // Backend enforces all envs/filiais for admin — send minimal data
-      environments.push('Administração', 'Financeiro', 'Indicadores');
+      environments.push(ADMIN_ENVIRONMENT, 'Financeiro', 'Indicadores');
       ['Financeiro', 'Indicadores'].forEach(env => {
         filiais[env] = ['Ibiporã (Matriz)', 'Rondonópolis', 'Paranaguá'];
       });
@@ -228,131 +230,186 @@ const AdminWorkspace: React.FC = () => {
     }
   };
 
+  const activeUsersCount = useMemo(
+    () => usersList.filter((u) => u.status === 'ativo').length,
+    [usersList],
+  );
+
   const allPermissionsList = MODULE_PERMISSIONS;
 
   return (
-    <div style={{ padding: '4px' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '15px' }}>
-        <header className="view-header" style={{ marginBottom: 0 }}>
-          <h1>Controle Geral de Usuários</h1>
-          <p>Gerencie o cadastro de usuários operacionais do ERP, altere funções de acesso, e configure permissões específicas por filial.</p>
-        </header>
-        <button 
-          type="button" 
-          className="btn-login" 
+    <div className="admin-page">
+      <header className="admin-page__header">
+        <div className="admin-page__title-group">
+          <div className="admin-page__accent" />
+          <div>
+            <h1 className="admin-page__title">Controle Geral de Usuários</h1>
+            <p className="admin-page__subtitle">
+              {activeTab === 'users'
+                ? 'Gerencie cadastros, funções de acesso e permissões por filial.'
+                : 'Histórico de ações realizadas no sistema.'}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          className="reports-action-btn primary"
           id="btn-admin-new-user"
-          style={{ width: 'auto', padding: '0 20px', margin: 0, height: '40px', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#0076ce' }}
           onClick={handleOpenCreate}
+          style={{ display: activeTab === 'users' ? undefined : 'none' }}
         >
-          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
+          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
           <span>Criar Usuário</span>
         </button>
+      </header>
+
+      <div className="admin-page__tabs">
+        <div className="segmented-tabs-container">
+          <button
+            type="button"
+            className={`segmented-tab-btn ${activeTab === 'users' ? 'active' : ''}`}
+            onClick={() => setActiveTab('users')}
+          >
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+            </svg>
+            Usuários
+          </button>
+          <button
+            type="button"
+            className={`segmented-tab-btn ${activeTab === 'audit' ? 'active' : ''}`}
+            onClick={() => setActiveTab('audit')}
+          >
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
+            Logs de Auditoria
+          </button>
+        </div>
       </div>
 
-      {/* Main Table Card */}
-      <div className="comercial-proposals-card">
-        {/* Table Header Controls */}
-        <div className="comercial-table-header" style={{ padding: '16px 20px' }}>
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', width: '100%', justifyContent: 'space-between' }}>
-            {/* Search */}
-            <div className="comercial-search-wrapper" style={{ width: '300px', margin: 0 }}>
-              <svg className="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              </svg>
-              <input 
-                type="text" 
-                placeholder="Buscar por nome ou usuário..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            {/* Filters */}
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <select 
-                className="comercial-select-filter"
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
-                style={{ width: '160px' }}
-              >
-                <option value="todos">Todas Funções</option>
-                {roles.map((role) => (
-                  <option key={role.id} value={role.id}>{role.name}</option>
-                ))}
-              </select>
-              
-              <select 
-                className="comercial-select-filter"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                style={{ width: '160px' }}
-              >
-                <option value="todos">Todos Status</option>
-                <option value="ativo">Ativo</option>
-                <option value="inativo">Inativo</option>
-              </select>
-            </div>
+      {activeTab === 'users' && (
+        <>
+      <div className="reports-meta-bar">
+        <div className="reports-meta-item">
+          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+          </svg>
+          <span>Total: <strong>{usersList.length}</strong> usuários</span>
+        </div>
+        <div className="reports-meta-item">
+          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>Ativos: <strong>{activeUsersCount}</strong></span>
+        </div>
+        <div className="reports-meta-item">
+          <span>Exibidos: <strong>{filteredUsers.length}</strong></span>
+        </div>
+      </div>
+
+      <div className="reports-filters-bar">
+        <div className="reports-filter-left" style={{ display: 'flex', gap: '12px', flex: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div className="reports-search-wrapper" style={{ minWidth: '280px' }}>
+            <svg className="search-icon" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.637 10.637z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Buscar por nome ou usuário..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="reports-select-wrapper">
+            <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
+              <option value="todos">Função: Todas</option>
+              {roles.map((role) => (
+                <option key={role.id} value={role.id}>{role.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="reports-select-wrapper">
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <option value="todos">Status: Todos</option>
+              <option value="ativo">Ativo</option>
+              <option value="inativo">Inativo</option>
+            </select>
           </div>
         </div>
+        <div className="reports-filter-right">
+          <span className="reports-records-count"><strong>{filteredUsers.length}</strong> exibidos</span>
+        </div>
+      </div>
 
-        {/* Users Table */}
-        <div className="table-container">
-          <table className="erp-table">
+      <div className="erp-card reports-table-card admin-page__card admin-page__card--fill">
+        <div className="table-container admin-page__table-fill">
+          <table className="erp-table reports-table">
             <thead>
               <tr>
                 <th>Usuário</th>
                 <th>Nome Completo</th>
                 <th>Função</th>
-                <th>Status</th>
+                <th style={{ textAlign: 'center' }}>Status</th>
                 <th>Último Acesso</th>
-                <th>Ações</th>
+                <th style={{ width: '220px', textAlign: 'center' }}>Ações</th>
               </tr>
             </thead>
             <tbody>
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic', padding: '24px' }}>
-                    Nenhum usuário operacional cadastrado com os filtros ativos.
+                  <td colSpan={6} className="admin-page__empty">
+                    Nenhum usuário encontrado com os filtros aplicados.
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((u) => {
-                  const roleName = roles.find(r => r.id === u.roleId)?.name || 'Operador';
-                  const initials = u.name.split(' ').length > 1 ? u.name.split(' ')[0][0] + u.name.split(' ')[u.name.split(' ').length - 1][0] : u.name.slice(0,2);
-                  const formattedInitials = initials.toUpperCase();
-                  
-                  const lastLoginStr = u.lastLogin 
-                    ? new Date(u.lastLogin).toLocaleDateString('pt-BR') + ' ' + new Date(u.lastLogin).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) 
+                filteredUsers.map((u, idx) => {
+                  const roleName = roles.find((r) => r.id === u.roleId)?.name || 'Operador';
+                  const nameParts = u.name.split(' ');
+                  const initials = nameParts.length > 1
+                    ? nameParts[0][0] + nameParts[nameParts.length - 1][0]
+                    : u.name.slice(0, 2);
+                  const lastLoginStr = u.lastLogin
+                    ? `${new Date(u.lastLogin).toLocaleDateString('pt-BR')} ${new Date(u.lastLogin).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
                     : 'Nunca logou';
 
                   return (
-                    <tr key={u.id}>
+                    <tr key={u.id} className={idx % 2 === 1 ? 'zebra-row' : ''}>
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#0076ce', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '12px', flexShrink: 0, boxShadow: '0 2px 4px rgba(0,0,0,0.08)' }}>
-                            {formattedInitials}
-                          </div>
+                        <div className="admin-user-cell">
+                          <div className="admin-user-avatar">{initials.toUpperCase()}</div>
                           <strong>{u.username}</strong>
                         </div>
                       </td>
                       <td>{u.name}</td>
-                      <td><span style={{ fontWeight: 600 }}>{roleName}</span></td>
-                      <td>
+                      <td><span className="admin-role-label">{roleName}</span></td>
+                      <td style={{ textAlign: 'center' }}>
                         <span className={`status-badge ${u.status === 'ativo' ? 'success' : 'inativo'}`}>
                           {u.status}
                         </span>
                       </td>
-                      <td><small style={{ color: 'var(--text-muted)' }}>{lastLoginStr}</small></td>
+                      <td><span className="admin-muted">{lastLoginStr}</span></td>
                       <td>
-                        <button type="button" className="btn-table-action" onClick={() => handleOpenEdit(u)}>Editar</button>
-                        <button type="button" className="btn-table-action" onClick={() => handleToggleStatus(u)}>
-                          {u.status === 'ativo' ? 'Inativar' : 'Ativar'}
-                        </button>
-                        <button type="button" className="btn-table-action delete" onClick={() => handleDelete(u)}>Excluir</button>
+                        <div className="admin-table-actions">
+                          <button type="button" className="admin-table-action" onClick={() => handleOpenEdit(u)}>
+                            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                            </svg>
+                            Editar
+                          </button>
+                          <button type="button" className="admin-table-action admin-table-action--warn" onClick={() => handleToggleStatus(u)}>
+                            {u.status === 'ativo' ? 'Inativar' : 'Ativar'}
+                          </button>
+                          <button type="button" className="admin-table-action admin-table-action--danger" onClick={() => handleDelete(u)}>
+                            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                            </svg>
+                            Excluir
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -362,40 +419,51 @@ const AdminWorkspace: React.FC = () => {
           </table>
         </div>
       </div>
+        </>
+      )}
 
-      {/* Audit Logs */}
-      <div className="comercial-proposals-card" style={{ marginTop: '24px' }}>
-        <div className="comercial-table-header" style={{ padding: '16px 20px' }}>
-          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>Logs de Auditoria</h3>
+      {activeTab === 'audit' && (
+        <>
+      <div className="reports-meta-bar">
+        <div className="reports-meta-item">
+          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+          </svg>
+          <span>Total: <strong>{auditLogs.length}</strong> registros</span>
         </div>
-        <div className="table-container">
-          <table className="erp-table">
+        <div className="reports-meta-item">
+          <span>Exibindo os <strong>{Math.min(auditLogs.length, 50)}</strong> mais recentes</span>
+        </div>
+      </div>
+
+      <div className="erp-card reports-table-card admin-page__card admin-page__card--fill">
+        <div className="table-container admin-page__table-fill">
+          <table className="erp-table reports-table">
             <thead>
               <tr>
-                <th>Data/Hora</th>
-                <th>Usuário</th>
-                <th>Ação</th>
+                <th style={{ width: '160px' }}>Data/Hora</th>
+                <th style={{ width: '140px' }}>Usuário</th>
+                <th style={{ width: '160px' }}>Ação</th>
                 <th>Detalhes</th>
               </tr>
             </thead>
             <tbody>
               {auditLogs.length === 0 ? (
                 <tr>
-                  <td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic', padding: '24px' }}>
+                  <td colSpan={4} className="admin-page__empty">
                     Nenhum log de auditoria registrado.
                   </td>
                 </tr>
               ) : (
-                auditLogs.slice(0, 50).map((log) => (
-                  <tr key={log.id}>
+                auditLogs.slice(0, 50).map((log, idx) => (
+                  <tr key={log.id} className={idx % 2 === 1 ? 'zebra-row' : ''}>
+                    <td><span className="admin-muted">{new Date(log.timestamp).toLocaleDateString('pt-BR')} {new Date(log.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span></td>
+                    <td><strong>{log.username || log.userId || '—'}</strong></td>
                     <td>
-                      <small style={{ color: 'var(--text-muted)' }}>
-                        {new Date(log.timestamp).toLocaleDateString('pt-BR')}{' '}
-                        {new Date(log.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                      </small>
+                      <span className={`admin-audit-chip ${log.action === 'login' ? 'admin-audit-chip--login' : ''}`}>
+                        {log.action}
+                      </span>
                     </td>
-                    <td>{log.username || log.userId || '—'}</td>
-                    <td><span style={{ fontWeight: 600 }}>{log.action}</span></td>
                     <td>{log.details}</td>
                   </tr>
                 ))
@@ -404,6 +472,8 @@ const AdminWorkspace: React.FC = () => {
           </table>
         </div>
       </div>
+        </>
+      )}
 
       {/* MODAL: CRIAR / EDITAR USUÁRIO */}
       {isModalOpen && (

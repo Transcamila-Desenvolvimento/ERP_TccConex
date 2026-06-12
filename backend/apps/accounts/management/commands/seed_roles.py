@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 
+from apps.accounts.constants import ADMIN_ENVIRONMENT
 from apps.accounts.models import Role
 
 INITIAL_ROLES = [
@@ -7,7 +8,7 @@ INITIAL_ROLES = [
         'id': '1',
         'name': 'Administrador',
         'description': 'Acesso total a todos os módulos do ERP e administração.',
-        'permissions': ['Administração', 'Financeiro', 'Indicadores'],
+        'permissions': [ADMIN_ENVIRONMENT, 'Financeiro', 'Indicadores'],
     },
     {
         'id': '2',

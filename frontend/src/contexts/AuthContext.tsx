@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { User } from '../types/domain';
 import { apiService } from '../services/apiService';
-import { ACTIVE_ENVIRONMENTS } from '../constants/environments';
+import { ACTIVE_ENVIRONMENTS, normalizeEnvironment } from '../constants/environments';
 import { AUTH_PROFILE_QUERY_KEY, useAuthProfile } from '../hooks/useAuthProfile';
 
 const activeEnvSet = new Set<string>(ACTIVE_ENVIRONMENTS);
@@ -31,12 +31,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isLoading = sessionActive ? profileLoading : false;
 
   useEffect(() => {
-    const savedEnv = localStorage.getItem('prothon_env');
+    const savedEnvRaw = localStorage.getItem('prothon_env');
     const savedFilial = localStorage.getItem('prothon_filial');
+    const savedEnv = savedEnvRaw ? normalizeEnvironment(savedEnvRaw) : null;
     if (savedEnv && activeEnvSet.has(savedEnv)) {
+      if (savedEnvRaw !== savedEnv) {
+        localStorage.setItem('prothon_env', savedEnv);
+      }
       setSelectedEnvironment(savedEnv);
       if (savedFilial) setSelectedFilial(savedFilial);
-    } else if (savedEnv) {
+    } else if (savedEnvRaw) {
       localStorage.removeItem('prothon_env');
       localStorage.removeItem('prothon_filial');
     }

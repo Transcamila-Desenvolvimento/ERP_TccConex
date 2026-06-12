@@ -1,6 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { ADMIN_ENVIRONMENT } from '../constants/environments';
 
 // Pages
 import LoginPage from '../pages/LoginPage';
@@ -9,7 +10,7 @@ import DashboardLayout from '../layouts/DashboardLayout';
 
 // Lazy-loaded Workspaces (Carregamento sob Demanda / Lazy Loading)
 const DashboardWorkspace = lazy(() => import('../workspaces/Dashboard/DashboardWorkspace'));
-const AdminWorkspace = lazy(() => import('../workspaces/Admin/AdminWorkspace'));
+const AdminWorkspace = lazy(() => import('../workspaces/Admin/AdminRouter'));
 const FinanceiroWorkspace = lazy(() => import('../workspaces/Financeiro/FinanceiroWorkspace'));
 const RelatoriosWorkspace = lazy(() => import('../workspaces/Relatorios/RelatoriosWorkspace'));
 const IndicadoresWorkspace = lazy(() => import('../workspaces/Indicadores/IndicadoresWorkspace'));
@@ -67,7 +68,7 @@ const DashboardIndexRedirect: React.FC = () => {
   if (selectedEnvironment === 'Financeiro') {
     return <Navigate to="/financeiro/home" replace />;
   }
-  if (selectedEnvironment === 'Administração') {
+  if (selectedEnvironment === ADMIN_ENVIRONMENT) {
     return <Navigate to="/admin" replace />;
   }
   if (selectedEnvironment === 'Indicadores') {
@@ -109,7 +110,7 @@ const AppRoutes: React.FC = () => {
           {/* Main workspace redirects to dash general or respective subviews */}
           <Route index element={<DashboardIndexRedirect />} />
 
-          <Route path="admin" element={
+          <Route path="admin/*" element={
             <Suspense fallback={<PageLoader />}>
               <AdminWorkspace />
             </Suspense>

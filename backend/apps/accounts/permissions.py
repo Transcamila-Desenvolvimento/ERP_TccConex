@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from rest_framework.permissions import BasePermission
 
+from .constants import ADMIN_ENVIRONMENT, normalize_environment
+
 ALL_BRANCHES = ['Ibiporã (Matriz)', 'Rondonópolis', 'Paranaguá']
 
 # Ambientes sem filial obrigatória na sessão (visão consolidada).
-GLOBAL_ENVIRONMENTS = frozenset({'Administração', 'Financeiro'})
+GLOBAL_ENVIRONMENTS = frozenset({ADMIN_ENVIRONMENT, 'Financeiro'})
 
 # Nomes de filial no banco podem ser abreviados (ex.: faturamento usa "Ibiporã").
 FILIAL_DB_ALIASES: dict[str, list[str]] = {
@@ -42,7 +44,7 @@ def db_values_for_filiais(filial_names: list[str]) -> list[str]:
 def user_has_module_access(user, module: str) -> bool:
     if not user.is_authenticated:
         return False
-    if module == 'Administração':
+    if normalize_environment(module) == ADMIN_ENVIRONMENT:
         return user.is_admin
     if user.is_admin:
         return True
@@ -60,7 +62,7 @@ def check_module_request_access(user, request, module: str) -> bool:
         return False
 
     env, filial = get_request_context(request)
-    if env and env != module:
+    if env and normalize_environment(env) != normalize_environment(module):
         return False
 
     if module in GLOBAL_ENVIRONMENTS:

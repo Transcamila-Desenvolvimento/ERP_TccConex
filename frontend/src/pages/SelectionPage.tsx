@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { filterActiveEnvironments, type ActiveEnvironment } from '../constants/environments';
+import { filterActiveEnvironments, ADMIN_ENVIRONMENT, type ActiveEnvironment } from '../constants/environments';
 import logoImg from '../assets/Logo_TccConex.png';
 
-const GLOBAL_ENVIRONMENTS = ['Administração', 'Financeiro'];
+const GLOBAL_ENVIRONMENTS = [ADMIN_ENVIRONMENT, 'Financeiro'];
 
 const SelectionPage: React.FC = () => {
   const { user, selectEnvironmentAndFilial, logout } = useAuth();
@@ -54,14 +54,14 @@ const SelectionPage: React.FC = () => {
   };
 
   const getEnvCode = (env: string) => {
-    if (env === 'Administração') return 'ADM';
+    if (env === ADMIN_ENVIRONMENT) return 'ADM';
     if (env === 'Financeiro') return 'FIN';
     if (env === 'Indicadores') return 'IND';
     return 'ERP';
   };
 
   const envData: { name: ActiveEnvironment; code: string; color: string; text: string }[] = [
-    { name: 'Administração', code: 'ADM', color: '#ef4444', text: 'Painel Administrativo (ADM)' },
+    { name: ADMIN_ENVIRONMENT, code: 'ADM', color: '#ef4444', text: 'Administração / Manutenção (ADM)' },
     { name: 'Financeiro', code: 'FIN', color: '#3b82f6', text: 'Módulo Financeiro (FIN)' },
     { name: 'Indicadores', code: 'IND', color: '#8b5cf6', text: 'Módulo de Indicadores (IND)' },
   ];
